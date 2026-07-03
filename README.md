@@ -62,6 +62,20 @@ The `Prompts` folder contains five prompt variants:
 1. The evaluation form PDF is used for the human evaluation section.
 2. `Validation rules for Structural Validation.pdf` contains the rules used for structural validation.
 
+## Syntax-Grounded Repair
+
+Syntax-grounded repair provides the model with violation-specific PlantUML
+patterns for the issues detected in the current diagram. It supports syntax
+errors, initial and final transition problems, orphan and unreachable states,
+duplicate transitions, and invalid choice, fork, join, and history nodes.
+
+## LLM-as-a-Judge
+
+The reference-free judging workflow uses DeepSeek, Llama, and Prometheus to
+score valid diagrams for completeness, correctness, understandability, and
+terminological alignment. The repository also includes code for human--LLM and
+inter-judge agreement analysis.
+
 ## Notes
 
 1. This repository is organized as a research and evaluation artifact collection.

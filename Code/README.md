@@ -14,6 +14,10 @@ For repository-level context, see [../README.md](../README.md). For dataset and 
 6. `hybrid_requirement_pipeline.py` prepares structured functional requirements from raw requirement text when needed.
 7. `build_repair_iteration_artifacts.py` summarizes repair attempts and prepares repair-iteration review files.
 8. `report_validity_percentages.py` reports PlantUML syntax validity and stricter State Transition Diagram structural validity.
+9. `Scripts/plantuml_experiment_pipeline.py` provides the extended repair pipeline, including syntax-grounded repair prompts.
+10. `Scripts/judge_three_llms_reference_free.py` scores valid diagrams with DeepSeek, Llama, and Prometheus.
+11. `Scripts/build_final_human_llm_comparison.py` combines normalized human and LLM judge scores.
+12. `Scripts/analyze_llm_judge_results.py` calculates human--LLM agreement, inter-judge agreement, and self-evaluation bias.
 
 ## Requirements
 
@@ -105,3 +109,18 @@ python3 Code/plantuml_experiment_pipeline.py run \
 5. The repaired diagram is kept only when the validation score improves.
 
 Generated diagrams, prompts, metadata, and metric summaries are written under `results/plantuml_pipeline/`.
+
+## Syntax-Grounded Repair
+
+The extended pipeline under `Scripts/` supports syntax-grounded repair. It
+supplies violation-specific PlantUML patterns for the issues detected in the
+current candidate, while retaining the requirement, candidate diagram, and
+validator diagnostics in the repair prompt.
+
+## LLM-as-a-Judge
+
+The reference-free judging workflow evaluates strictly valid diagrams for
+completeness, correctness, understandability, and terminological alignment.
+DeepSeek, Llama, and Prometheus are supported as independent judges. The
+analysis scripts compare their scores with human ratings and calculate
+inter-judge agreement and self-evaluation bias.

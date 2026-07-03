@@ -24,6 +24,3 @@ validation.
 All evaluations were reference-free and inference-only. Each judge scored
 completeness, correctness, understandability, and terminological alignment on a
 1--5 Likert scale.
-
-No human ratings, human consensus scores, human--LLM agreement results, or
-personally identifying evaluator information are included in this package.
