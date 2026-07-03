@@ -6,7 +6,7 @@ For repository-level context, see [../README.md](../README.md). For dataset and 
 
 ## Main Scripts
 
-1. `plantuml_experiment_pipeline.py` is the main command-line entry point for creating splits, running diagram generation, applying repair, and recomputing metrics.
+1. `plantuml_experiment_pipeline.py` is the main command-line entry point for creating splits, running diagram generation, applying baseline or syntax-grounded repair, and recomputing metrics.
 2. `plantuml_pipeline/` contains the reusable pipeline package.
 3. `build_rag_index.py` builds the Chroma vector index from Markdown files in `Data/rag_corpus/`.
 4. `create_rag_dataset_examples.py` creates RAG example Markdown files from the training part of the dataset.
@@ -111,7 +111,7 @@ Generated diagrams, prompts, metadata, and metric summaries are written under `r
 
 ## Syntax-Grounded Repair
 
-The extended pipeline under `Scripts/` supports syntax-grounded repair. It
+The unified pipeline supports syntax-grounded repair. It
 supplies violation-specific PlantUML patterns for the issues detected in the
 current candidate, while retaining the requirement, candidate diagram, and
 validator diagnostics in the repair prompt.

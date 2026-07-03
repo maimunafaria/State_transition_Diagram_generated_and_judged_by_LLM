@@ -48,3 +48,4 @@ state "Watch" as Watch {
 
   TurnedOn : do / lightWatchFace
 }
+@enduml

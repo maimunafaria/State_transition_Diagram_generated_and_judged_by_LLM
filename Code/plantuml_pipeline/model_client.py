@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from typing import Any
 from urllib import error, request
 
@@ -50,6 +51,41 @@ def call_ollama(
     return (data.get("response") or "").strip()
 
 
+def call_openai_chat(
+    model: str,
+    prompt: str,
+    temperature: float,
+    top_p: float,
+    max_tokens: int,
+    timeout: int,
+) -> str:
+    api_key = os.getenv("OPENAI_API_KEY", "").strip()
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY is not set")
+
+    payload = {
+        "model": model,
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": temperature,
+        "top_p": top_p,
+        "max_tokens": max_tokens,
+    }
+    data = json_post(
+        url="https://api.openai.com/v1/chat/completions",
+        payload=payload,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        },
+        timeout=timeout,
+    )
+    choices = data.get("choices") or []
+    if not choices:
+        raise RuntimeError(f"OpenAI returned no choices: {data}")
+    content = choices[0].get("message", {}).get("content", "")
+    return (content or "").strip()
+
+
 def call_model(
     model_name: str,
     prompt: str,
@@ -59,6 +95,16 @@ def call_model(
     max_tokens: int,
     timeout: int,
 ) -> str:
+    lower = model_name.lower()
+    if lower.startswith("gpt-"):
+        return call_openai_chat(
+            model=model_name,
+            prompt=prompt,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            timeout=timeout,
+        )
     return call_ollama(
         model=model_name,
         prompt=prompt,

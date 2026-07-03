@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-"""Find failed, incomplete, invalid, or missing three-LLM judgement rows."""
+
 
 from __future__ import annotations
 

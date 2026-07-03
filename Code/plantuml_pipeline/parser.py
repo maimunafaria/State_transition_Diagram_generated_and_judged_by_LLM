@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import os
+import re
 import shutil
 import subprocess
 import tempfile
-import re
 from pathlib import Path
 
 from .constants import STATE_ALIAS_RE, STATE_ALIAS_REVERSE_RE, STATE_DECL_RE, TRANSITION_RE
@@ -89,6 +90,7 @@ def extract_plantuml_block(text: str) -> str:
 
 
 def strip_inline_comment(line: str) -> str:
+    # PlantUML uses single quote for inline comments.
     if "'" in line:
         return line.split("'", 1)[0]
     return line
@@ -316,7 +318,17 @@ def validate_graph(graph: DiagramGraph) -> ValidationResult:
 
 def check_plantuml_syntax(puml_text: str, timeout: int = 8) -> tuple[list[str], list[str]]:
     plantuml = shutil.which("plantuml")
-    if not plantuml:
+    plantuml_jar = os.getenv("PLANTUML_JAR", "").strip()
+    java = shutil.which("java")
+    if plantuml_jar:
+        if not Path(plantuml_jar).is_file():
+            return [], [f"plantuml_jar_not_found: {plantuml_jar}"]
+        if not java:
+            return [], ["java_command_not_found_for_plantuml_jar"]
+        command = [java, "-jar", plantuml_jar]
+    elif plantuml:
+        command = [plantuml]
+    else:
         return [], ["plantuml_command_not_found_for_official_syntax_check"]
 
     text = normalize_puml_text(puml_text)
@@ -324,12 +336,29 @@ def check_plantuml_syntax(puml_text: str, timeout: int = 8) -> tuple[list[str], 
         path = Path(temp_dir) / "diagram.puml"
         path.write_text(text, encoding="utf-8")
         result = subprocess.run(
-            [plantuml, "-checkonly", str(path)],
+            [*command, "-checkonly", str(path)],
             text=True,
             capture_output=True,
             timeout=timeout,
             check=False,
         )
+        diagnostic_output = ""
+        if result.returncode != 0:
+            try:
+                diagnostic = subprocess.run(
+                    [*command, "-verbose", str(path)],
+                    text=True,
+                    capture_output=True,
+                    timeout=timeout,
+                    check=False,
+                )
+                diagnostic_output = "\n".join(
+                    part.strip()
+                    for part in (diagnostic.stdout, diagnostic.stderr)
+                    if part.strip()
+                )
+            except (subprocess.SubprocessError, OSError):
+                diagnostic_output = ""
 
     if result.returncode == 0:
         return [], []
@@ -337,7 +366,28 @@ def check_plantuml_syntax(puml_text: str, timeout: int = 8) -> tuple[list[str], 
     output = "\n".join(
         part.strip() for part in (result.stdout, result.stderr) if part.strip()
     ).strip()
-    message = "; ".join(output.splitlines()[:2]) if output else f"exit_code={result.returncode}"
+    line_match = re.search(r"Error line\s+(\d+)", diagnostic_output, re.IGNORECASE)
+    if line_match:
+        line_number = int(line_match.group(1))
+        source_lines = text.splitlines()
+        failing_line = (
+            source_lines[line_number - 1].strip()
+            if 1 <= line_number <= len(source_lines)
+            else ""
+        )
+        start = max(1, line_number - 2)
+        end = min(len(source_lines), line_number + 2)
+        context = " | ".join(
+            f"{index}: {source_lines[index - 1].strip()}"
+            for index in range(start, end + 1)
+        )
+        message = (
+            f"line {line_number}: {failing_line}; context: {context}"
+            if failing_line
+            else f"line {line_number}; context: {context}"
+        )
+    else:
+        message = "; ".join(output.splitlines()[:2]) if output else f"exit_code={result.returncode}"
     message = message.replace(str(path), "diagram.puml")
     return [f"plantuml_syntax_error: {message}"], []
 

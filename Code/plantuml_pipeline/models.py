@@ -67,6 +67,7 @@ class ExperimentConfig:
     strategy: str
     use_rag: bool
     use_structural_validation: bool
+    use_ensemble: bool
     baseline_subset_only: bool
 
     def to_dict(self) -> dict[str, Any]:
@@ -78,5 +79,6 @@ class ExperimentConfig:
             "strategy": self.strategy,
             "use_rag": self.use_rag,
             "use_structural_validation": self.use_structural_validation,
+            "use_ensemble": self.use_ensemble,
             "baseline_subset_only": self.baseline_subset_only,
         }

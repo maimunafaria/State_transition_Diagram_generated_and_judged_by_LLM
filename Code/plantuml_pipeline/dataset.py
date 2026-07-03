@@ -12,7 +12,6 @@ from .parser import normalize_puml_text, parse_and_validate_puml_text
 
 
 def prompt_requirement_from_structured(text: str) -> str:
-    """Return the prompt-ready requirement section from a structured file."""
     stripped = text.strip()
     if not stripped:
         return ""
@@ -35,7 +34,6 @@ def prompt_requirement_from_structured(text: str) -> str:
 
 
 def load_cases(dataset_root: Path) -> list[Case]:
-    """Load dataset cases, preferring the structured requirement used in prompts."""
     case_dirs = sorted(
         [p for p in dataset_root.glob("case_*") if p.is_dir()],
         key=lambda p: p.name,
@@ -155,6 +153,7 @@ def stratified_split_cases(
 
 
 def build_experiment_configs(
+    gpt_model: str,
     qwen_model: str,
     qwen14_model: str,
     mistral_model: str,
@@ -162,9 +161,24 @@ def build_experiment_configs(
     llama70_model: str,
     deepseek_model: str,
     deepseek14_model: str,
-    rag_analysis_tag: str = "",
+    gemma3_model: str,
+    rag_ablation_tag: str = "",
+    repair_ablation_tag: str = "",
 ) -> list[ExperimentConfig]:
-    configs: list[ExperimentConfig] = []
+    configs: list[ExperimentConfig] = [
+        ExperimentConfig(
+            run_id="proprietary_baseline__gpt4o__zero_shot",
+            model_group="proprietary_baseline",
+            model_label="GPT-4o",
+            model_name=gpt_model,
+            strategy="zero_shot",
+            use_rag=False,
+            use_structural_validation=False,
+            use_ensemble=False,
+            baseline_subset_only=True,
+        )
+    ]
+
     open_models = [
         ("Qwen2.5-7B-Instruct", qwen_model, "qwen25_7b_instruct"),
         ("Qwen2.5-14B-Instruct", qwen14_model, "qwen25_14b_instruct"),
@@ -173,27 +187,39 @@ def build_experiment_configs(
         ("Llama 3.1-70B-Instruct", llama70_model, "llama31_70b_instruct"),
         ("DeepSeek-R1-8B", deepseek_model, "deepseek_r1_8b"),
         ("DeepSeek-R1-14B", deepseek14_model, "deepseek_r1_14b"),
+        ("Gemma 3 12B", gemma3_model, "gemma3_12b"),
     ]
     strategies = [
-        ("zero_shot", False, False),
-        ("few_shot", False, False),
-        ("zero_shot_validation_generator_critic_repair", False, True),
-        ("few_shot_validation_generator_critic_repair", False, True),
-        ("rag", True, False),
-        ("rag_structural_validation", True, True),
-        ("rag_validation_generator_critic_repair", True, True),
+        ("zero_shot", False, False, False),
+        ("few_shot", False, False, False),
+        ("chain_of_thought", False, False, False),
+        ("chain_of_thought_validation_generator_critic_repair", False, True, True),
+        ("zero_shot_validation_generator_critic_repair", False, True, True),
+        ("few_shot_validation_generator_critic_repair", False, True, True),
+        ("rag", True, False, False),
+        ("rag_structural_validation", True, True, False),
+        ("rag_validation_generator_critic_repair", True, True, True),
     ]
 
     def normalize_tag(tag: str) -> str:
         return re.sub(r"[^a-z0-9]+", "_", tag.strip().lower()).strip("_")
 
-    rag_tag = normalize_tag(rag_analysis_tag)
+    rag_tag = normalize_tag(rag_ablation_tag)
+    repair_tag = normalize_tag(repair_ablation_tag)
 
     for model_label, model_name, model_tag in open_models:
-        for strategy, use_rag, use_validation in strategies:
+        for strategy, use_rag, use_validation, use_ensemble in strategies:
+            if strategy == "chain_of_thought" and model_tag in {
+                "qwen25_14b_instruct",
+                "llama31_70b_instruct",
+                "deepseek_r1_8b",
+            }:
+                continue
             run_id = f"open_source__{model_tag}__{strategy}"
             if use_rag and rag_tag:
                 run_id = f"{run_id}__{rag_tag}"
+            if "repair" in strategy and repair_tag:
+                run_id = f"{run_id}__{repair_tag}"
             configs.append(
                 ExperimentConfig(
                     run_id=run_id,
@@ -203,6 +229,7 @@ def build_experiment_configs(
                     strategy=strategy,
                     use_rag=use_rag,
                     use_structural_validation=use_validation,
+                    use_ensemble=use_ensemble,
                     baseline_subset_only=False,
                 )
             )
