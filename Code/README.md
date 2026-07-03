@@ -14,10 +14,9 @@ For repository-level context, see [../README.md](../README.md). For dataset and 
 6. `hybrid_requirement_pipeline.py` prepares structured functional requirements from raw requirement text when needed.
 7. `build_repair_iteration_artifacts.py` summarizes repair attempts and prepares repair-iteration review files.
 8. `report_validity_percentages.py` reports PlantUML syntax validity and stricter State Transition Diagram structural validity.
-9. `Scripts/plantuml_experiment_pipeline.py` provides the extended repair pipeline, including syntax-grounded repair prompts.
-10. `Scripts/judge_three_llms_reference_free.py` scores valid diagrams with DeepSeek, Llama, and Prometheus.
-11. `Scripts/build_final_human_llm_comparison.py` combines normalized human and LLM judge scores.
-12. `Scripts/analyze_llm_judge_results.py` calculates human--LLM agreement, inter-judge agreement, and self-evaluation bias.
+9. `Scripts/judge_three_llms_reference_free.py` scores valid diagrams with DeepSeek, Llama, and Prometheus.
+10. `Scripts/build_final_human_llm_comparison.py` combines normalized human and LLM judge scores.
+11. `Scripts/analyze_llm_judge_results.py` calculates human--LLM agreement, inter-judge agreement, and self-evaluation bias.
 
 ## Requirements
 
